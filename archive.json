@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-01-09T01:11:36.831107+00:00",
+  "timestamp": "2022-01-11T01:09:57.654048+00:00",
   "repo": "mlswg/mls-protocol",
   "labels": [
     {
@@ -5288,7 +5288,7 @@
       "labels": [],
       "body": "A GroupInfo (or a PublicGroupState) should only ever contain one RatchetTreeExtension. Either that or it should be specified what happens if there is more than one.",
       "createdAt": "2021-12-17T11:09:22Z",
-      "updatedAt": "2022-01-06T21:34:29Z",
+      "updatedAt": "2022-01-10T06:59:49Z",
       "closedAt": null,
       "comments": [
         {
@@ -5297,6 +5297,13 @@
           "body": "Seems like we should be able to make a general proclamation that extension IDs MUST be unique in a given vector of extensions, whether that's GroupContext, KeyPackage, GroupInfo, GroupContextExtensions, etc.",
           "createdAt": "2022-01-06T21:34:29Z",
           "updatedAt": "2022-01-06T21:34:29Z"
+        },
+        {
+          "author": "kkohbrok",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Sounds good to me. I'll draft a PR.",
+          "createdAt": "2022-01-10T06:59:49Z",
+          "updatedAt": "2022-01-10T06:59:49Z"
         }
       ]
     },
@@ -5328,7 +5335,7 @@
       "labels": [],
       "body": "In section 14.1 Message Encryption and Decryption there is a paragraph describing the reasons why you would want to use padding, and part of that mentions the following\r\n\r\nAs the padding mechanism is used to improve protection against traffic analysis, removal of the padding SHOULD be implemented in a \"constant-time\" manner at the MLS layer and above layers to prevent timing side-channels that would provide attackers with information on the size of the plaintext. The padding length length_of_padding can be chosen at the time of the message encryption by the sender.\r\n\r\nThis seems out of date given that padding is a separate field that doesn't need to be explicitly stripped off at decrypt time and there is no other mention of `length_of_padding` in the document.",
       "createdAt": "2022-01-06T15:53:58Z",
-      "updatedAt": "2022-01-06T21:44:20Z",
+      "updatedAt": "2022-01-10T16:36:10Z",
       "closedAt": null,
       "comments": [
         {
@@ -5337,8 +5344,47 @@
           "body": "That seems right.  We used to have a more clever, more economical padding scheme mirroring what TLS does.  But that got rationalized a while ago.  These are probably dangling references.  Want to send a PR?",
           "createdAt": "2022-01-06T21:44:20Z",
           "updatedAt": "2022-01-06T21:44:20Z"
+        },
+        {
+          "author": "tomleavy",
+          "authorAssociation": "NONE",
+          "body": "Sounds good, pushed PR https://github.com/mlswg/mls-protocol/pull/536",
+          "createdAt": "2022-01-10T16:36:10Z",
+          "updatedAt": "2022-01-10T16:36:10Z"
         }
       ]
+    },
+    {
+      "number": 537,
+      "id": "I_kwDOBoyH6c5BdADG",
+      "title": "Clarity around extensions and `RequiredCapabilities`",
+      "url": "https://github.com/mlswg/mls-protocol/issues/537",
+      "state": "OPEN",
+      "author": "tomleavy",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "The description of `RequiredCapabilities` is clear that proposals defined in the RFC are not to be included because they are considered standard, however there is no such clarification around extensions. \r\n\r\nIn general, extension requirements are not all that clear because in several places (such as Lifetime) it is mentioned that an extension must be included, however they are all listed as recommended rather than required in the table. It also raises a question in that if an extension is required to be implemented as part of the specification, and required in every KeyPackage, should it just be a field rather than an extension?",
+      "createdAt": "2022-01-10T16:45:24Z",
+      "updatedAt": "2022-01-10T16:45:24Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 538,
+      "id": "I_kwDOBoyH6c5BdDmk",
+      "title": "KeyPackage lifetime handling",
+      "url": "https://github.com/mlswg/mls-protocol/issues/538",
+      "state": "OPEN",
+      "author": "tomleavy",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "The RFC currently says the following:\r\n\r\nA client MUST NOT use the data in a KeyPackage for any processing before the not_before date, or after the not_after date.\r\n\r\nClarification would be helpful here because this could be interpreted in different ways and I imagine this would be a point of contention when trying to gain compatibility between implementations. \r\n\r\nExamples: \r\n\r\n* A key package expires after it has been placed into a leaf\r\n* A key package has an expiration in 1 month, a commit is made which places it into a leaf, and a member of the group receives that commit 1 month later due to them being offline",
+      "createdAt": "2022-01-10T16:55:49Z",
+      "updatedAt": "2022-01-10T16:55:49Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -38968,7 +39014,7 @@
       "labels": [],
       "body": "The current use of `wire_format` is a bit weird to me: it is the first value of both `MLSPlaintext` and `MLSCiphertext` which allows the implementations to differentiate between them. Then it looks like it should be implemented as a regular tagged union, which is what this pull request does.\r\n\r\nThis does not imply any changes to existing implementations.\r\n\r\nOne thing that this pull-request changes is that `MLSPlaintext` is forced to have `wire_format = mls_plaintext`, but I don't see why it would have any other values in this case?",
       "createdAt": "2021-12-07T16:50:20Z",
-      "updatedAt": "2021-12-17T16:40:20Z",
+      "updatedAt": "2022-01-10T19:37:09Z",
       "baseRepository": "mlswg/mls-protocol",
       "baseRefName": "main",
       "baseRefOid": "6754a8edc9d77c902643d37a519b9a546ab00b4e",
@@ -39021,6 +39067,13 @@
           "body": "I made a first draft on how the Message Framing section would look like after the refactor. If you agree about these changes I'll change the mentions to `MLSPlaintext` everywhere in the document. What do you think about it? I'm not used to write RFC-like documents so I'm not 100% sure about the formulation I used.\r\n\r\n@raphaelrobert the membership tag is present only in the plaintext and not is the ciphertext, so is it is not part of `MLSMessageAuth`, but only part of `MLSPlaintext`.",
           "createdAt": "2021-12-17T16:40:20Z",
           "updatedAt": "2021-12-17T16:40:20Z"
+        },
+        {
+          "author": "rohan-wire",
+          "authorAssociation": "NONE",
+          "body": "I independently was working on a rewrite of the definition of MLSPlaintext as follows. Note that this makes the presence of the confirmation_tag and membership_tag more explicit.\r\n\r\nI am also not a fan of the name `authenticated_data` because all the data in MLSPlaintextTBS is authenticated. I am open to other suggestions.\r\n\r\n    struct {\r\n        WireFormat wire_format;\r\n        opaque group_id<0..255>;\r\n        uint64 epoch;\r\n        Sender sender;\r\n        opaque extra_authenticated_data<0..2^32-1>;\r\n        ContentType content_type;\r\n        select (MLSPlaintext.content_type) {\r\n            case application:\r\n              opaque application_data<0..2^32-1>;\r\n            case proposal:\r\n              Proposal proposal;\r\n            case commit:\r\n              Commit commit;\r\n        }\r\n    } MLSPlaintextTBS;\r\n    \r\n    struct {\r\n        WireFormat wire_format = mls_plaintext;\r\n        opaque group_id<0..255>;\r\n        uint64 epoch;\r\n        Sender sender;\r\n        opaque extra_authenticated_data<0..2^32-1>;\r\n        ContentType content_type;\r\n        select (MLSPlaintext.content_type) {\r\n            case proposal:\r\n              Proposal proposal;\r\n            case commit:\r\n              Commit commit;\r\n        }\r\n        opaque mls_plaintext_signature<Signature_length>;\r\n        select (MLSPlaintext.content_type) {\r\n            case commit:\r\n                opaque confirmation_tag<MAC_length>;\r\n        }\r\n        select (MLSPlaintext.sender.sender_type) {\r\n            case member:\r\n                opaque membership_tag<MAC_length>;\r\n        }\r\n    } MLSPlaintext;\r\n\r\n",
+          "createdAt": "2022-01-10T19:37:09Z",
+          "updatedAt": "2022-01-10T19:37:09Z"
         }
       ],
       "reviews": []
@@ -39037,7 +39090,7 @@
       "labels": [],
       "body": "As @kkohbrok noted [on the mailing list](https://mailarchive.ietf.org/arch/msg/mls/P8CiOeQy3lev7s5vbnaRkPwRa1Q/), the current truncation algorithm breaks parent hashes.  This PR implements the \"careful truncation\" algorithm he proposes.",
       "createdAt": "2021-12-14T14:45:18Z",
-      "updatedAt": "2021-12-16T20:22:05Z",
+      "updatedAt": "2022-01-10T20:37:47Z",
       "baseRepository": "mlswg/mls-protocol",
       "baseRefName": "main",
       "baseRefOid": "2de18dce6939cf7cbb619d5824e2560c6e5efd57",
@@ -39048,7 +39101,15 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "raphaelrobert",
+          "authorAssociation": "MEMBER",
+          "body": "I think this should be good to go?",
+          "createdAt": "2022-01-10T20:37:47Z",
+          "updatedAt": "2022-01-10T20:37:47Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOBoyH6c4xkqqA",
@@ -39233,7 +39294,7 @@
       "labels": [],
       "body": "Signatures as specified in the MLS protocol document are ambiguous, in the sense that signatures produced for one purpose in the protocol can be (maliciously) used in a different place of the protocol.\r\nIndeed, we found that for example, a `KeyPackage` can have the same serialization as `MLSPlaintextTBS`, which proves that one signature could be accepted for different structures.\r\n\r\nThe collisions we have found so far are quite artificial, so it is not super clear how to exploit this, but at least it makes it impossible to have provable security.\r\n\r\nThe solution is pretty simple, we simply prefix each signed value with a label, in a fashion similar to `ExpandWithLabel`.\r\nThat way, when calling `SignWithLabel` you can give the structure name in the `Label` argument.",
       "createdAt": "2021-12-16T11:56:57Z",
-      "updatedAt": "2022-01-06T18:48:37Z",
+      "updatedAt": "2022-01-10T18:15:17Z",
       "baseRepository": "mlswg/mls-protocol",
       "baseRefName": "main",
       "baseRefOid": "6754a8edc9d77c902643d37a519b9a546ab00b4e",
@@ -39306,6 +39367,26 @@
               "updatedAt": "2022-01-06T18:48:37Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOBoyH6c4yjicE",
+          "commit": {
+            "abbreviatedOid": "4c0c8bf"
+          },
+          "author": "TWal",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-01-10T18:15:16Z",
+          "updatedAt": "2022-01-10T18:15:17Z",
+          "comments": [
+            {
+              "originalPosition": 80,
+              "body": "I not sure the alternative is a good idea for several reasons, for example the `membership_tag` is present only in `MLSPlaintext` and not in `MLSCiphertext`, also I'm not confident in removing things from the signature without a solid proof that it is not necessary (for example, signing the tree hash seems like a reasonable thing to do?).\r\n\r\nI feel like adding a `context` input is a bit weird. What do you think about this third option: adding an `option<GroupContext> group_context;` and say something like \"group_context MUST contain a value if sender_type = ...\" below? This pattern already exists for `confirmation_tag` for example.",
+              "createdAt": "2022-01-10T18:15:16Z",
+              "updatedAt": "2022-01-10T18:15:17Z"
+            }
+          ]
         }
       ]
     },
@@ -39321,7 +39402,7 @@
       "labels": [],
       "body": "Our proposal\r\n============\r\n\r\nThe parent hash construction currently authenticates only the public keys in the ratchet tree and does not protect other tree contents, notably the credentials at the leaves.\r\nConsequently, a malicious member can tamper with the credentials before sending a Welcome package to a new member, even if it cannot tamper with the public keys.\r\n\r\nInstead of using the tree resolution in the parent hash computation, we propose to use the tree hash.\r\n\r\nThe last time this was discussed on the list, it was agreed that it would be better to use tree hashes from a security point of view, but it was felt that complexity-wise that the recipient of a Welcome message would have to do O(n^2) work.\r\nA more thorough analysis shows that processing a Welcome message can be done in O(n*log(log(n))).\r\nThe result is that each signature captures the full tree contents including leaf credentials, which provides better authentication guarantees for member identities.\r\n\r\nEfficient algorithm to process a Commit\r\n=======================================\r\n\r\nWhen processing Commits, the implementation can store the tree hashes of every subtree.\r\nThat way, with n being the number of leaves, you can process each proposal in O(log(n)) and each UpdatePath in O(log(n)).\r\nThen you can check the parent hash when processing a Commit in O(p*log(n)) where p is the number of proposals.\r\n\r\nEfficient (enough) algorithm to process a Welcome\r\n=================================================\r\n\r\nWhen processing a Welcome message, we need to do the parent hash verification procedure.\r\nTo do it with the new parent hash, we need to compute tree hashes of subtrees at the last time they were updated.\r\nThis can be done using the following modified tree hash:\r\n\r\n    OldTreeHash(leaf, excluded_leaves) = Hash(leaf) if leaf not in excluded_leaves\r\n    OldTreeHash(leaf, excluded_leaves) = Hash(blank leaf) if leaf in excluded_leaves\r\n    OldTreeHash(node, excluded_leaves) = Hash(node.content | OldTreeHash(node.left, left_excluded_leaves) | OldTreeHash(node.right, right_excluded_leaves))\r\n    where left_excluded_leaves = leaves that are in excluded_leaves and in node.left (same for right_excluded_leaves).\r\n    and `excluded_leaves` are removed from `node.content.unmerged_leaves`.\r\n\r\nThen we can compute the parent hash for a node `N` with child `C` and sibling `S` using `OldTreeHash(S, N.content.unmerged_leaves)`: this old tree hash don't change when Adds are applied to the tree.\r\n\r\nIn the next paragraph, we will see that we can compute the parent hash for every node in `O(n*log(n))`.\r\n\r\nLet `h` be the height of the tree (so `h = log(n)`). There are `O(2^{h-i})` nodes at height `i`, and computing the parent hash for a node at height `i` is done in `O(2^i)`.\r\nHence, the complexity for the parent hash verification procedure is:\r\n\r\n      \\sum_{i=1}^h O(2^i 2^{h-i})\r\n    = \\sum_{i=1}^h O(2^h)\r\n    = O(h 2^h)\r\nAnd since `h = log(n)`, the complexity is `O(n*log(n))`.\r\n\r\nEfficient algorithm to process a Welcome\r\n========================================\r\n\r\nImagine we have the following tree:\r\n\r\n                  W\r\n            ______|______\r\n           /             \\\r\n          U               Y [E, G]\r\n        __|__           __|__\r\n       /     \\         /     \\\r\n      T       V       X [E]   Z [G, H]\r\n     / \\     / \\     / \\     / \\\r\n    A   B   C   D   E   F   G   H\r\n\r\nFor each node `N`, `OldTreeHash(N, excluded_leaves)` will be called with different values for `excluded_leaves`.\r\n\r\nFor example, if the sibling is always the right child, then:\r\n- `OldTreeHash(H, .)` will be called with 1 time with `. = [H]` (when computing the parent hash of `Z`) and 2 times with `. = []` (when computing the parent hash of `Y` and `W`)\r\n- `OldTreeHash(Z, .)` will be called with 1 time with `. = [G]` (when computing the parent hash of `Y`) and 1 time with `. = []` (when computing the parent hash of `W`)\r\n\r\nIf the sibling is always the left child, then:\r\n- `OldTreeHash(A, .)` will be called 3 times with `. = []` (when computing the parent hash of `T`, `U`, `W`)\r\n- `OldTreeHash(T, .)` will be called 2 times with `. = []` (when computing the parent hash of `U`, `W`)\r\n\r\nWe can see that some values are computed several times, which means that the whole computation could be sped up using memoization.\r\n\r\nTo estimate the speedup, we will estimate with how many values for `excluded_leaves` is called `OldTreeHash(N, .)` for each node `N`. Summing up these values will give a complexity, which will be `O(n*log(log(n)))`.\r\n\r\nLet `node.parent[k]` be the `k`th parent of `node`, and `node.leaves` be the set of leaves in the subtree rooted at `node`.\r\nThen, each call of `OldTreeHash(node, excluded_leaves)` will have `excluded_leaves = Intersection(node.parent[k].unmerged_leaves, node.leaves)` for some `k`.\r\nLet's note this set `excluded_leaves_k`.\r\nThe tree has the invariant that if `i <= j` then `excluded_leaves_j` is a subset of `excluded_leaves_i` (i.e. the sets `excluded_leaves_k` are decreasing).\r\n\r\nLet d be the depth of `node` (with the root being at depth 1). Then, the set `excluded_leaves_set := {excluded_leaves_1, ..., excluded_leaves_{d-1}}` corresponds to the values for `excluded_leaves` in the calls to `OldTreeHash(N, .)`.\r\n\r\nFirst bound: `|excluded_leaves_set| <= d-1 <= d` because it is defined using `d-1` values.\r\nSecond bound: `|excluded_leaves_set| <= 2^{h-d}+1` because `|excluded_leaves_0| <= 2^{h-d}` and the sets `excluded_leaves_k` are decreasing.\r\nTherefore: for a node at depth d, `|excluded_leaves_set| <= min(d, 2^{h-d}+1)`\r\n\r\nThe complexity to do the parent hash verification procedure is therefore in `O(sum_{i=1}^h 2^i min(i, 2^{h-i}+1))`.\r\n\r\nLet's estimate this complexity more explicitly:\r\n\r\n       sum_{i=1}^h 2^i min(i, 2^{h-i}+1)\r\n    <= (sum_{i=1}^t i 2^i) + (sum_{i=t+1}^h 2^i (2^{h-i}+1)) [for all t]\r\n    =  (2 (t-1) 2^t + 2) + ((h-t) 2^h + 2^{h+1} - 2^{t+1}) [for all t]\r\n\r\nFor the first inequality, we split the sum in two parts and use `min(i, 2^{h-i}+1) <= i` in the left part and `min(i, 2^{h-i}+1) <= 2^{h-i}+1` in the right part.\r\nFor the second equality, it can be derived using the formula for geometric sum.\r\n\r\nIf we take `t = h - log(h)`, we can compute that the left part is `O(2^h)` and the right part is `O(log(h)*2^h)`.\r\n\r\nTherefore, the parent hash verification procedure complexity is `O(log(h)*2^h) = O(n*log(log(n)))`.\r\n\r\nOne might say that adding memoization has a cost and isn't in O(1), but here it is: using the fact that `excluded_leaves_k` are decreasing, if you process the tree in a bottom-up or top-down way, you only have to compare the length of the current `excluded_leaves` to the length of the previous one, and it tells you if you need to recompute the tree hash.\r\n\r\nThe current parent hash is not super fast\r\n=========================================\r\n\r\nIn the worst case, if most internal nodes are blank, then computing the parent hash for a node is in O(size of its subtree), which give an O(n*log(n)) complexity as we saw in the section about the naive algorithm.\r\n\r\nWhen processing a Commit, if most of the internal nodes are blank, then computing the new parent hashes is in O(n) which is quite slow.",
       "createdAt": "2021-12-16T12:54:02Z",
-      "updatedAt": "2022-01-06T21:30:10Z",
+      "updatedAt": "2022-01-10T21:30:15Z",
       "baseRepository": "mlswg/mls-protocol",
       "baseRefName": "main",
       "baseRefOid": "6754a8edc9d77c902643d37a519b9a546ab00b4e",
@@ -39346,6 +39427,20 @@
           "body": "I agree that this scheme seems strictly stronger than the current scheme, and it\r\nprobably has the same operational properties given that the original sibling\r\ntree hash changes when the original sibling resolution changes, and vice\r\nversa.\r\n\r\nThe main thing that seems trickier about this version is the \"reversing\"\r\noperation, i.e., the process of computing the earlier state from the current\r\nstate.  With the resolution approach, it's just a question of removing some\r\nvalues from a list of public keys.  With this approach, you need to replicate\r\nthe actual structure of the tree.\r\n\r\nAs usual, the trouble is at the right edge of the tree.  For a parent node along\r\nthe right edge of the tree with unmerged leaves added to the right edge of the\r\ntree, you can't just replace the blanks with blanks, you need to remove the\r\nintermediate nodes that were added as well.  \r\n\r\nLooking at your example case, I think you've actually drawn an impossible tree!\r\nFor the node Z to be populated, it has to have been set by either G or H.  If H\r\nhad done it, then obviously H wouldn't be unmerged.  If G did it, then it would\r\nhave encrypted Z to H if H were present, or if it were absent, then G's parent\r\nwould be Y and Z would still be blank from H being added.\r\n\r\nSo the more realistic case is something like:\r\n\r\n~~~~~\r\n              W [H]\r\n        ______|_____\r\n       /             \\\r\n      U               Y [F, H]\r\n    __|__           __|__\r\n   /     \\         /     \\\r\n  T       V       X [F]   _\r\n / \\     / \\     / \\     / \\\r\nA   B   C   D   E   F   G   H\r\n~~~~~\r\n\r\nJust to be confirm this is realistic: This could arise via the following sequence of operations:\r\n\r\n1. Start with A, B, C, D\r\n2. A adds E, F', G; commit-path\r\n3. A removes F'; commit+path\r\n4. E commits without proposal => path sets X, Y, W\r\n5. A adds F; commit+path\r\n6. A adds H; commit-path\r\n\r\nNow suppose H as a new joiner wants to verify this tree.  The parent hash of U was last set at 5, at which point the tree looked like this:\r\n\r\n~~~~~\r\n              W\r\n        ______|_____\r\n       /             \\\r\n      U               Y [F]\r\n    __|__           __|_\r\n   /     \\         /    \\\r\n  T       V       X [F] |\r\n / \\     / \\     / \\    |\r\nA   B   C   D   E   F   G \r\n~~~~~\r\n\r\nSo in your case `P=W`, `S=Y`, the \"original tree hash\" for Y needs to be the hash of the tree *without the parent node above G and H*.\r\n\r\nIn other words, the original tree hash reconstruction algorithm needs to truncate the tree in addition to replacing leaves with blanks.  From an implementation POV, that starts to sound quite a bit more challenging, since I'm now doing computing tree hashes over a tree I don't otherwise have.\r\n\r\nIt seems like there are a few ways forward here:\r\n\r\n1. Do nothing; use the original sibling resolution.\r\n2. Use the original tree hash, but truncate the tree for rightmost-added unmerged leaves.\r\n3. Use the original tree hash, but update so that the tree always expands by doubling, instead of adding one leaf at a time.  This allows the leaf-blanking algorithm to work, at the expense of some other inefficiencies.\r\n4. Use the tree hash, but remove the notion of unmerged leaves altogether (so there's no \"original\" tree hash).\r\n\r\nAmong those, my favorite option might actually be (4).  At this point, it kind of seems like unmerged leaves are more trouble than they're worth.  Their best-case efficiencies arise only in kinda weird cases, and they're making it hard to get good guarantees.\r\n\r\n@raphaelrobert @kkohbrok thoughts?",
           "createdAt": "2022-01-06T21:30:09Z",
           "updatedAt": "2022-01-06T21:30:09Z"
+        },
+        {
+          "author": "kkohbrok",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I agree that an \"upgrade\" to using the tree hash rather than the public key would be a good idea. I'm also leaning towards (4), but I'm not convinced that unmerged leaves are more trouble than they're worth. But at this point, I don't have any data on how unmerged leaves impact performance and I also don't have a better idea, so I'd be Ok with (4) (although it would also be interesting to see what the truncation algorithm for (2) would look like).",
+          "createdAt": "2022-01-10T14:43:17Z",
+          "updatedAt": "2022-01-10T14:43:17Z"
+        },
+        {
+          "author": "raphaelrobert",
+          "authorAssociation": "MEMBER",
+          "body": "Thanks @TWal! I've been trying to wrap my head around this, because it is a major change with a lot of subtle nuances.\r\nI think it's important to differentiate the concerns:\r\n\r\n*Security* \r\n\r\nYou mention that \"a malicious member can tamper with the credentials before sending a Welcome package to a new member, even if it cannot tamper with the public keys\". This makes it sound like a bigger problem than it is (unless I missed something). A malicious member can only tamper with credentials if it also has the corresponding private key material to do so. If that's the case, a wealth of new attacks become possible because authentication is obviously broken. There might be some more subtle attacks where a malicious member could do cross-group attacks without actually changing the credential. For example, the malicious member could pretend that member X is part of the new group, when member X is really only part of a totally different group. This would trick the new joiner Y into believing two things:\r\n\r\na) Member X is a member of the new group (this attack has always been possible with empty trees)\r\nb) Member X has previously sent a full commit and therefore proven it's aware that it is in the group (this attack is currently possible)\r\n\r\nAttack b) would become impossible by using the tree hash as you propose, and therefore it's obviously strictly more secure. If you thought of other types of attacks (that are maybe not so niche), it would be interesting to hear about it.\r\n\r\nIf the definition you propose is also motivated by better probability, this would be another reason to go for it.\r\n\r\n*Efficiency*\r\n\r\nThis is harder to reasons about. As always, one has to make a number of assumptions about concrete scenarios. Dropping unmerged leaves would certainly make a lot of things easier and cleaner, but so far I've always assumed that they make things more efficient. My reasoning was the following: Without unmerged leaves, adding multiple new members in different locations of the tree (wherever the leftmost blanks are) would quickly blank most parent nodes in the tree and we'd go back to a linear effort. It's been mentioned that unmerged leaves can also be slower when there is a lot of them, however I find that an unlikely scenario to occur. You only get a lot of unmerged leaves if the tree is densely populated, which in turn means that members issue full commits frequently. Because of the latter, it is unlikely that the new members (that caused the unmerged leaves to appear) would not update just as frequently. I know this is a bit hand wavy, I guess running MC simulations in different scenarios would help.\r\n\r\nWith all that, I'm wondering if the current parent hash definition couldn't be extended by covering the whole key packages at the leaf level instead of just the keys (by modifying the `ParentHashInput`)? Maybe I'm missing something, but I think it would just be a small change in the spec that should address the security concern and not affect the efficiency at all.",
+          "createdAt": "2022-01-10T21:30:15Z",
+          "updatedAt": "2022-01-10T21:30:15Z"
         }
       ],
       "reviews": []
@@ -39362,18 +39457,33 @@
       "labels": [],
       "body": "This PR refactors the two sections on Group Joining (via Welcome and via External Init) by changing the `GroupInfo` struct that can be used for both cases. The `external_pub` used in the course of an External Init is added as an optional field. This PR also:\r\n\r\n- removes the redundant ProtocolVersion in the GroupInfo\r\n- adds a GroupInfoTBS struct to follow the convention of specifying a TBS struct for signed messages\r\n- implicitly, the `confirmed_transcript_hash` and `confirmation_tag` is now used for external inits instead of the `interim_transcript_hash`, which was not sufficient to create a valid commit",
       "createdAt": "2021-12-17T10:53:40Z",
-      "updatedAt": "2022-01-06T19:34:24Z",
+      "updatedAt": "2022-01-10T20:47:34Z",
       "baseRepository": "mlswg/mls-protocol",
       "baseRefName": "main",
       "baseRefOid": "6754a8edc9d77c902643d37a519b9a546ab00b4e",
       "headRepository": "kkohbrok/mls-protocol",
       "headRefName": "refactor_pgs_and_welcome",
-      "headRefOid": "b970e193c9ef66a0e3cd7ae430cb0614924e27b5",
+      "headRefOid": "98981c5c74a0adf2d0283706cf232e1acbc5f9a2",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "kkohbrok",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Thanks for the suggestions! I agree that it's a bit nicer to have an extension rather then an optional field.",
+          "createdAt": "2022-01-10T07:09:53Z",
+          "updatedAt": "2022-01-10T07:09:53Z"
+        },
+        {
+          "author": "raphaelrobert",
+          "authorAssociation": "MEMBER",
+          "body": "I agree it's good to align `PublicGroupState` and `GroupInfo`!",
+          "createdAt": "2022-01-10T20:47:34Z",
+          "updatedAt": "2022-01-10T20:47:34Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOBoyH6c4ybLO6",
@@ -39400,6 +39510,26 @@
               "updatedAt": "2022-01-06T19:34:24Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOBoyH6c4ykF6H",
+          "commit": {
+            "abbreviatedOid": "98981c5"
+          },
+          "author": "raphaelrobert",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-01-10T20:46:34Z",
+          "updatedAt": "2022-01-10T20:46:35Z",
+          "comments": [
+            {
+              "originalPosition": 135,
+              "body": "Since it's now an extension, do we still need it here?",
+              "createdAt": "2022-01-10T20:46:35Z",
+              "updatedAt": "2022-01-10T20:46:35Z"
+            }
+          ]
         }
       ]
     },
@@ -39415,7 +39545,7 @@
       "labels": [],
       "body": "In all instances that I could find in the spec, the `ProtocolVersion` is redundant, as it appears alongside the `ciphersuite, which implies an MLS version. This PR thus removes explicit handling of MLS versions outside of ciphersuite concerns.",
       "createdAt": "2021-12-27T14:05:44Z",
-      "updatedAt": "2022-01-06T19:10:41Z",
+      "updatedAt": "2022-01-10T20:59:39Z",
       "baseRepository": "mlswg/mls-protocol",
       "baseRefName": "main",
       "baseRefOid": "6754a8edc9d77c902643d37a519b9a546ab00b4e",
@@ -39433,6 +39563,20 @@
           "body": "This seems like a bad idea to me. We may well want to change ciphers without changing protocols or vice versa. ",
           "createdAt": "2022-01-06T18:53:07Z",
           "updatedAt": "2022-01-06T18:53:07Z"
+        },
+        {
+          "author": "kkohbrok",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I don't have a strong opinion either way, but the way it currently is doesn't makes the version fields redundant. @bifurcation do you want to make a PR with a scheme that detaches the ciphersuites from the versions? Although that's probably a discussion we should have on the mailing list as well.",
+          "createdAt": "2022-01-10T06:58:43Z",
+          "updatedAt": "2022-01-10T06:58:43Z"
+        },
+        {
+          "author": "raphaelrobert",
+          "authorAssociation": "MEMBER",
+          "body": "I agree that we should really choose between:\r\n\r\na) Having protocol version-specific ciphersuites and not repeat the protocol version (note that ciphersuites could still be changed for a given protocol version)\r\nb) Not have protocol version-specific ciphersuites and mention the protocol version wherever needed\r\n\r\nIIRC we discussed this at the interim in 2020 in NYC and the reason for deviating from what TLS does were the following:\r\n\r\n - MLS is unlikely to ever have as many ciphersuites as TLS\r\n - The meaning/set of the crypto primitives mentioned in the ciphersuite might considerably change between MLS versions. If the primitives are used differently in a newer version (their meaning changes), it might be a security issue (e.g. a certain security level is now no longer considered sufficient). If the set changes, ciphersuites can't be carried over between versions anyway.\r\n\r\nI'm not very hung up on this, but we did have reasons to do what we did at the time.\r\n",
+          "createdAt": "2022-01-10T20:59:39Z",
+          "updatedAt": "2022-01-10T20:59:39Z"
         }
       ],
       "reviews": [
@@ -39492,6 +39636,72 @@
           "comments": []
         }
       ]
+    },
+    {
+      "number": 535,
+      "id": "PR_kwDOBoyH6c4wtxNQ",
+      "title": "Require extensions to be unique in any given extensions vector",
+      "url": "https://github.com/mlswg/mls-protocol/pull/535",
+      "state": "OPEN",
+      "author": "kkohbrok",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #530.",
+      "createdAt": "2022-01-10T07:15:21Z",
+      "updatedAt": "2022-01-10T21:00:33Z",
+      "baseRepository": "mlswg/mls-protocol",
+      "baseRefName": "main",
+      "baseRefOid": "e39695c6e8fe39e04fe644a213eb8a82ac483e3b",
+      "headRepository": "kkohbrok/mls-protocol",
+      "headRefName": "extension_uniqueness",
+      "headRefOid": "aa763c98a06c2a5e5d082830f3e74f6ce3fcbeb4",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOBoyH6c4ykIv2",
+          "commit": {
+            "abbreviatedOid": "aa763c9"
+          },
+          "author": "raphaelrobert",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-01-10T21:00:33Z",
+          "updatedAt": "2022-01-10T21:00:33Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 536,
+      "id": "PR_kwDOBoyH6c4wvqZX",
+      "title": "Reword padding section to reflect updated padding structure",
+      "url": "https://github.com/mlswg/mls-protocol/pull/536",
+      "state": "OPEN",
+      "author": "tomleavy",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "The padding section was out of date based on prior changes. Resolves #534 ",
+      "createdAt": "2022-01-10T16:34:53Z",
+      "updatedAt": "2022-01-10T16:34:53Z",
+      "baseRepository": "mlswg/mls-protocol",
+      "baseRefName": "main",
+      "baseRefOid": "e39695c6e8fe39e04fe644a213eb8a82ac483e3b",
+      "headRepository": "tomleavy/mls-protocol",
+      "headRefName": "padding-update",
+      "headRefOid": "9555eb99b3f21b9b38e6fe849bc43dbd9139d668",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
