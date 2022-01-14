@@ -1510,22 +1510,20 @@ HashReference ProposalRef;
    } ParentHashInput;
 
    The Parent Hash of P with Co-Path Child S is the hash of a
-   ParentHashInput object populated as follows:
+   ParentHashInput object populated as follows.  The field public_key
+   contains the HPKE public key of P.  If P is the root, then
+   parent_hash is set to a zero-length octet string.  Otherwise
+   parent_hash is the Parent Hash of P's parent with P's sibling as the
+   co-path child.
 
-   *  The field public_key contains the HPKE public key of P.
-
-   *  If P is the root, then parent_hash is set to a zero-length octet
-      string.  Otherwise parent_hash is the Parent Hash of P's parent
-      with P's sibling as the co-path child.
-
-   *  Finally, original_child_resolution is the array of HPKEPublicKey
-      values of the nodes in the resolution of S but with the
-      unmerged_leaves of P omitted.  For example, in the ratchet tree
-      depicted in Section 5.2 the ParentHashInput of node Z with co-path
-      child C would contain an empty original_child_resolution since C's
-      resolution includes only itself but C is also an unmerged leaf of
-      Z.  Meanwhile, the ParentHashInput of node Z with co-path child D
-      has an array with one element in it: the HPKE public key of D.
+   Finally, original_child_resolution is the array of HPKEPublicKey
+   values of the nodes in the resolution of S but with the
+   unmerged_leaves of P omitted.  For example, in the ratchet tree
+   depicted in Section 5.2 the ParentHashInput of node Z with co-path
+   child C would contain an empty original_child_resolution since C's
+   resolution includes only itself but C is also an unmerged leaf of Z.
+   Meanwhile, the ParentHashInput of node Z with co-path child D has an
+   array with one element in it: the HPKE public key of D.
 
 7.4.1.  Using Parent Hashes
 

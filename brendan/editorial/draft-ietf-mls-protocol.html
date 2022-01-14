@@ -2948,23 +2948,17 @@ struct {
 </pre><a href="#section-7.4-4" class="pilcrow">¶</a>
 </div>
 <p id="section-7.4-5">The Parent Hash of P with Co-Path Child S is the hash of a <code>ParentHashInput</code> object
-populated as follows:<a href="#section-7.4-5" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-7.4-6.1">The field <code>public_key</code> contains the HPKE public key of P.<a href="#section-7.4-6.1" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-7.4-6.2">If P is the root, then <code>parent_hash</code> is set to a zero-length octet string.
-Otherwise <code>parent_hash</code> is the Parent Hash of P's parent with P's sibling as
-the co-path child.<a href="#section-7.4-6.2" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-7.4-6.3">Finally, <code>original_child_resolution</code> is the array of <code>HPKEPublicKey</code> values of the
+populated as follows. The field <code>public_key</code> contains the HPKE public key of P. If P
+is the root, then <code>parent_hash</code> is set to a zero-length octet string.
+Otherwise <code>parent_hash</code> is the Parent Hash of P's parent with P's sibling as the
+co-path child.<a href="#section-7.4-5" class="pilcrow">¶</a></p>
+<p id="section-7.4-6">Finally, <code>original_child_resolution</code> is the array of <code>HPKEPublicKey</code> values of the
 nodes in the resolution of S but with the <code>unmerged_leaves</code> of P omitted. For
 example, in the ratchet tree depicted in <a href="#resolution-example" class="xref">Section 5.2</a> the
 <code>ParentHashInput</code> of node Z with co-path child C would contain an empty
 <code>original_child_resolution</code> since C's resolution includes only itself but C is also
 an unmerged leaf of Z. Meanwhile, the <code>ParentHashInput</code> of node Z with co-path child
-D has an array with one element in it: the HPKE public key of D.<a href="#section-7.4-6.3" class="pilcrow">¶</a>
-</li>
-        </ul>
+D has an array with one element in it: the HPKE public key of D.<a href="#section-7.4-6" class="pilcrow">¶</a></p>
 <div id="using-parent-hashes">
 <section id="section-7.4.1">
           <h4 id="name-using-parent-hashes">
