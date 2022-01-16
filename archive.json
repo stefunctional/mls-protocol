@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-01-13T01:11:40.137439+00:00",
+  "timestamp": "2022-01-16T01:14:10.438641+00:00",
   "repo": "mlswg/mls-protocol",
   "labels": [
     {
@@ -5382,7 +5382,7 @@
       "labels": [],
       "body": "The RFC currently says the following:\r\n\r\nA client MUST NOT use the data in a KeyPackage for any processing before the not_before date, or after the not_after date.\r\n\r\nClarification would be helpful here because this could be interpreted in different ways and I imagine this would be a point of contention when trying to gain compatibility between implementations. \r\n\r\nExamples: \r\n\r\n* A key package expires after it has been placed into a leaf\r\n* A key package has an expiration in 1 month, a commit is made which places it into a leaf, and a member of the group receives that commit 1 month later due to them being offline",
       "createdAt": "2022-01-10T16:55:49Z",
-      "updatedAt": "2022-01-12T15:53:48Z",
+      "updatedAt": "2022-01-13T07:05:09Z",
       "closedAt": null,
       "comments": [
         {
@@ -5405,6 +5405,13 @@
           "body": "@kkohbrok the one concern I had about not checking the lifetime upon receiving an add was just that I have no way to verify the sender of the add actually did a reasonable check. I don't see a way to resolve this problem though tbh",
           "createdAt": "2022-01-12T15:53:47Z",
           "updatedAt": "2022-01-12T15:53:47Z"
+        },
+        {
+          "author": "kkohbrok",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> @kkohbrok the one concern I had about not checking the lifetime upon receiving an add was just that I have no way to verify the sender of the add actually did a reasonable check. I don't see a way to resolve this problem though tbh\r\n\r\nYes, that one's tricky and I don't think there's a way to solve it properly. However, if you mandate by policy that the sender includes a time stamp (e.g. via a `time_of_add` extension or something similar) and you don't assume the sender is actively malicious or their clock is totally out-of-whack, then you can compare that with the expiration date of the KeyPackage included in the Add to get some idea of whether the KeyPackage was valid when the commit was done. This reminds me that committers should probably check all Add proposals for expired KeyPackages, since the proposal could have been sent well in advance of the actual commit. In any case, it would probably make sense to cover this explicitly either in the spec or in the architecture doc.",
+          "createdAt": "2022-01-13T07:05:09Z",
+          "updatedAt": "2022-01-13T07:05:09Z"
         }
       ]
     },
@@ -5420,7 +5427,7 @@
       "labels": [],
       "body": "`KeyPackage`s currently have two usages in the spec:\r\n1. Pre-published key packages that you can download and put in a leaf when adding a new member\r\n2. leaf node content that you update when doing a full `Commit`\r\n\r\nCurrently, things have been designed to use only one structure for both uses, leading to some weirdness such as:\r\n- `version` and `cipher_suite` are useful in the usage 1, but are parameters of the group in usage 2.\r\n- `hpke_init_key` is a good name in usage 1, but would better be named `hpke_key` in usage 2.\r\n- some data is important in usage 2 and have no meaning in usage 1, hence they were designed as \"mandatory-when-updating extensions\" (such as `ParentHash`, and we were also discussing about adding the `group_id` in #527 to help prevent cross-group attacks)\r\n\r\nHow about using different structures for these?\r\n\r\n    // Essentially identical to KeyPackage\r\n    struct {\r\n        ProtocolVersion version;\r\n        CipherSuite cipher_suite;\r\n        HPKEPublicKey hpke_init_key;\r\n        opaque endpoint_id<0..255>;\r\n        Credential credential;\r\n        Extension extensions<8..2^32-1>;\r\n        opaque signature<0..2^16-1>;\r\n    } PrePublishedKeyPackage;\r\n    \r\n    struct {\r\n        HPKEPublicKey hpke_key;\r\n        opaque endpoint_id<0..255>;\r\n        Credential credential;\r\n        opaque parent_hash<0..255>;\r\n        opaque group_id<0..255>;\r\n        Extension extensions<8..2^32-1>;\r\n        opaque signature<0..2^16-1>;\r\n    } LeafNodeContent;\r\n    \r\n    enum {\r\n        reserved(0),\r\n        pre_published_key_package(1),\r\n        leaf_node_content(2),\r\n        (255)\r\n    } LeafNodeType;\r\n    \r\n    struct LeafNode {\r\n        // This is not included in the signature, but with the \"unambiguous signature\" PR that's not a problem\r\n        LeafNodeType type;\r\n        select(LeafNode.type) {\r\n            case pre_published_key_package:\r\n                PrePublishedKeyPackage data;\r\n            case leaf_node_content:\r\n                LeafNodeContent data;\r\n        }\r\n    }\r\n\r\nWhat would you think about refactoring `KeyPackage` like this?",
       "createdAt": "2022-01-12T12:34:44Z",
-      "updatedAt": "2022-01-12T15:51:48Z",
+      "updatedAt": "2022-01-13T13:40:34Z",
       "closedAt": null,
       "comments": [
         {
@@ -5450,8 +5457,45 @@
           "body": "When sending a full `Commit`, the participant includes a new `LeafNodeContent` in the `UpdatePath` (it replaces the `leaf_key_package` field).\r\nIt computes the signature with `SignWithLabel(signature_key, \"LeafNodeContent\", LeafNodeContentTBS)` where:\r\n- `LeafNodeContentTBS` corresponds to all the fields of `LeafNodeContent` except `signature` (the usual thing)\r\n- `SignWithLabel` comes from #526 ",
           "createdAt": "2022-01-12T15:51:48Z",
           "updatedAt": "2022-01-12T15:51:48Z"
+        },
+        {
+          "author": "tomleavy",
+          "authorAssociation": "NONE",
+          "body": "What about the scenario where Alice pulls down Bob's key package to add him to the group? In that case Alice can't do the conversion between formats on Bob's behalf. ",
+          "createdAt": "2022-01-13T01:31:15Z",
+          "updatedAt": "2022-01-13T01:31:36Z"
+        },
+        {
+          "author": "TWal",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Alice don't have to do the conversion, this is why `LeafNode` either contain a `PrePublishedLeafPackage` (when adding someone to the group) or a `LeafNodeContent` (when updating your own key package).",
+          "createdAt": "2022-01-13T09:09:09Z",
+          "updatedAt": "2022-01-13T09:09:09Z"
+        },
+        {
+          "author": "tomleavy",
+          "authorAssociation": "NONE",
+          "body": "Ah somehow I missed that part in your original post. Makes sense",
+          "createdAt": "2022-01-13T13:40:34Z",
+          "updatedAt": "2022-01-13T13:40:34Z"
         }
       ]
+    },
+    {
+      "number": 540,
+      "id": "I_kwDOBoyH6c5BqThG",
+      "title": "Proposals by reference in external commit",
+      "url": "https://github.com/mlswg/mls-protocol/issues/540",
+      "state": "OPEN",
+      "author": "kkohbrok",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "The spec currently doesn't distinguish much between an external and a member commit w.r.t. how proposals by reference are handled. In theory, the server could keep track of proposals and send the external committer all proposals that were sent up until the time they want to commit externally. However, there are a few difficulties in committing proposals by reference in an external commit.\r\n\r\n* Membership tags: The external committer doesn't have the ability to verify membership tags on proposals. This is probably not a show-stopper, as proposals still need to be signed by a group member, but if nothing else, this should be noted in the spec.\r\n* Leaf positioning: The spec was changed such that the committer is added into the tree without an Add proposal being present. If there are other Add (and Remove) proposals present, it is unclear in what order they should be processed. Should the committer be added when the path is processed? Or should it still be processed as if it were an Add?\r\n\r\nThere are probably other things that can go wrong when committing referenced proposals externally, but those are the first that come to mind.\r\n\r\nThe simplest solution would be to simply ignore proposals by reference, although this would break the current principle that a commit must always include all valid proposals that were sent during the epoch. The consequence would be that Parties that sent proposals will have to re-send them if the epoch is ended by an external commit. It should be noted, that a Preconfigured sender will have no way to detect if their proposal was committed or not.",
+      "createdAt": "2022-01-13T11:55:41Z",
+      "updatedAt": "2022-01-13T11:55:41Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -39171,7 +39215,7 @@
       "labels": [],
       "body": "As @kkohbrok noted [on the mailing list](https://mailarchive.ietf.org/arch/msg/mls/P8CiOeQy3lev7s5vbnaRkPwRa1Q/), the current truncation algorithm breaks parent hashes.  This PR implements the \"careful truncation\" algorithm he proposes.",
       "createdAt": "2021-12-14T14:45:18Z",
-      "updatedAt": "2022-01-10T20:37:47Z",
+      "updatedAt": "2022-01-14T20:33:57Z",
       "baseRepository": "mlswg/mls-protocol",
       "baseRefName": "main",
       "baseRefOid": "2de18dce6939cf7cbb619d5824e2560c6e5efd57",
@@ -39264,6 +39308,19 @@
               "updatedAt": "2021-12-16T17:34:13Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOBoyH6c4y3TrW",
+          "commit": {
+            "abbreviatedOid": "15d265d"
+          },
+          "author": "Bren2010",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-01-14T20:33:57Z",
+          "updatedAt": "2022-01-14T20:33:57Z",
+          "comments": []
         }
       ]
     },
@@ -39804,13 +39861,13 @@
       "labels": [],
       "body": "Fixes #530.",
       "createdAt": "2022-01-10T07:15:21Z",
-      "updatedAt": "2022-01-10T21:00:33Z",
+      "updatedAt": "2022-01-14T14:46:50Z",
       "baseRepository": "mlswg/mls-protocol",
       "baseRefName": "main",
       "baseRefOid": "e39695c6e8fe39e04fe644a213eb8a82ac483e3b",
       "headRepository": "kkohbrok/mls-protocol",
       "headRefName": "extension_uniqueness",
-      "headRefOid": "aa763c98a06c2a5e5d082830f3e74f6ce3fcbeb4",
+      "headRefOid": "be98d1da1f2138de63bf026cc8ba6bf5650677ca",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -39829,6 +39886,26 @@
           "createdAt": "2022-01-10T21:00:33Z",
           "updatedAt": "2022-01-10T21:00:33Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDOBoyH6c4y1whE",
+          "commit": {
+            "abbreviatedOid": "aa763c9"
+          },
+          "author": "bifurcation",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "SGTM, one minor rephrasing for more  clarity.",
+          "createdAt": "2022-01-14T14:06:46Z",
+          "updatedAt": "2022-01-14T14:06:59Z",
+          "comments": [
+            {
+              "originalPosition": 18,
+              "body": "```suggestion\r\n* Any field containing a list of extensions MUST NOT have more than one extension of any given type.\r\n```",
+              "createdAt": "2022-01-14T14:06:46Z",
+              "updatedAt": "2022-01-14T14:06:59Z"
+            }
+          ]
         }
       ]
     },
@@ -39871,6 +39948,32 @@
           "comments": []
         }
       ]
+    },
+    {
+      "number": 541,
+      "id": "PR_kwDOBoyH6c4xDtKt",
+      "title": "Make some sections easier to read.",
+      "url": "https://github.com/mlswg/mls-protocol/pull/541",
+      "state": "OPEN",
+      "author": "Bren2010",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2022-01-14T20:04:17Z",
+      "updatedAt": "2022-01-14T20:04:17Z",
+      "baseRepository": "mlswg/mls-protocol",
+      "baseRefName": "main",
+      "baseRefOid": "e39695c6e8fe39e04fe644a213eb8a82ac483e3b",
+      "headRepository": "mlswg/mls-protocol",
+      "headRefName": "brendan/editorial",
+      "headRefOid": "91c5587b2d86b06cab40a03e2c73f460ffd1c25a",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
