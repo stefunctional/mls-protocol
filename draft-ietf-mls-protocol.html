@@ -5248,10 +5248,10 @@ def subtree_root(nodes):
 </pre><a href="#section-11.3-6" class="pilcrow">¶</a>
 </div>
 <p id="section-11.3-7">(Note that this is the same ordering of nodes as in the array-based tree representation
-described in <a href="#array-based-trees" class="xref">Appendix A</a>.  The algorithms in that section may be used to 
+described in <a href="#array-based-trees" class="xref">Appendix A</a>.  The algorithms in that section may be used to
 simplify decoding this extension into other representations.)<a href="#section-11.3-7" class="pilcrow">¶</a></p>
 <p id="section-11.3-8">(Note that this is the same ordering of nodes as in the array-based tree representation
-described in <a href="#array-based-trees" class="xref">Appendix A</a>.  The algorithms in that section may be used to 
+described in <a href="#array-based-trees" class="xref">Appendix A</a>.  The algorithms in that section may be used to
 simplify decoding this extension into other representations.)<a href="#section-11.3-8" class="pilcrow">¶</a></p>
 <p id="section-11.3-9">The example tree in <a href="#tree-computation-terminology" class="xref">Section 5.1</a> would be represented as an
 array of nodes in the following form, where R represents the "subtree root" for
@@ -5347,6 +5347,8 @@ message and not join the group.<a href="#section-12-5.4" class="pilcrow">¶</a>
 </li>
         <li class="normal" id="section-12-5.5">The extensions populated into a GroupContext object are drawn from those in
 the GroupInfo object, according to the definitions of those extensions.<a href="#section-12-5.5" class="pilcrow">¶</a>
+</li>
+        <li class="normal" id="section-12-5.6">Any field containing a list of extensions MUST NOT have more than one extension of any given type.<a href="#section-12-5.6" class="pilcrow">¶</a>
 </li>
       </ul>
 <p id="section-12-6">Note that the latter two requirements mean that all MLS extensions are
