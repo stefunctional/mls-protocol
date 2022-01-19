@@ -131,8 +131,7 @@ Table of Contents
        11.1.8.  GroupContextExtensions
        11.1.9.  External Proposals
      11.2.  Commit
-       11.2.1.  External Commits
-       11.2.2.  Welcoming New Members
+       11.2.1.  Adding Members to the Group
      11.3.  Ratchet Tree Extension
    12. Extensibility
    13. Sequencing of State Changes
@@ -573,15 +572,11 @@ Table of Contents
 
    *  A _Welcome_ message provides a new member to the group with the
       information to initialize their state for the epoch in which they
-      were added
+      were added or in which they want to add themselves to the group
 
-   *  A _PublicGroupState_ object provides potential new group members
-      with information about the state of a group at an epoch, to allow
-      a new member to add themselves to the group.
-
-   KeyPackage, Welcome, and PublicGroupState messages are used to
-   initiate a group or introduce new members, so they are exchanged
-   between group members and clients not yet in the group.
+   KeyPackage and Welcome messages are used to initiate a group or
+   introduce new members, so they are exchanged between group members
+   and clients not yet in the group.
 
    Proposal and Commit messages are sent from one member of a group to
    the others.  MLS provides a common framing layer for sending messages
@@ -1488,7 +1483,7 @@ HashReference ProposalRef;
 7.3.  KeyPackage Identifiers
 
    Within MLS, a KeyPackage is identified by its hash (see, e.g.,
-   Section 11.2.2).  The external_key_id extension allows applications
+   Section 11.2.1.2).  The external_key_id extension allows applications
    to add an explicit, application-defined identifier to a KeyPackage.
 
    opaque external_key_id<0..2^16-1>;
@@ -1865,9 +1860,9 @@ psk_secret (or 0) -> KDF.Extract
 
    external_priv, external_pub = KEM.DeriveKeyPair(external_secret)
 
-   The public key external_pub can be published as part of the
-   PublicGroupState struct in order to allow non-members to join the
-   group using an external commit.
+   The public key external_pub can be published as part of the GroupInfo
+   struct in order to allow non-members to join the group using an
+   external commit.
 
 8.1.  External Initialization
 
@@ -1879,7 +1874,7 @@ psk_secret (or 0) -> KDF.Extract
 
    In this process, the joiner sends a new init_secret value to the
    group using the HPKE export method.  The joiner then uses that
-   init_secret with information provided in the PublicGroupState and an
+   init_secret with information provided in the GroupInfo and an
    external Commit to initialize their copy of the key schedule for the
    new epoch.
 
@@ -1893,8 +1888,8 @@ psk_secret (or 0) -> KDF.Extract
    context = SetupBaseR(kem_output, external_priv, "")
    init_secret = context.export("MLS 1.0 external init secret", KDF.Nh)
 
-   In both cases, the info input to HPKE is set to the PublicGroupState
-   for the previous epoch, encoded using the TLS serialization.
+   In both cases, the info input to HPKE is set to the GroupInfo for the
+   previous epoch, encoded using the TLS serialization.
 
 8.2.  Pre-Shared Keys
 
@@ -2516,7 +2511,7 @@ sender_data_nonce = ExpandWithLabel(sender_data_secret, "nonce", ciphertext_samp
    other members are added when the creator effectively sends itself an
    Add proposal and commits it, then sends the corresponding Welcome
    message to the new participants.  These processes are described in
-   detail in Section 11.1.1, Section 11.2, and Section 11.2.2.
+   detail in Section 11.1.1, Section 11.2, and Section 11.2.1.2.
 
    The creator of a group MUST take the following steps to initialize
    the group:
@@ -2559,7 +2554,7 @@ sender_data_nonce = ExpandWithLabel(sender_data_secret, "nonce", ciphertext_samp
    *  Transmit the Welcome message to the other new members
 
    The recipient of a Welcome message processes it as described in
-   Section 11.2.2.
+   Section 11.2.1.2.
 
    In principle, the above process could be streamlined by having the
    creator directly create a tree and choose a random value for first
@@ -3171,10 +3166,13 @@ sender_data_nonce = ExpandWithLabel(sender_data_secret, "nonce", ciphertext_samp
 
       -  Other extensions as defined by the application
 
+      -  Optionally derive an external keypair as described in Section 8
+         (required for External Commits, see Section 11.2.1.1)
+
       -  Sign the GroupInfo using the member's private signing key
 
       -  Encrypt the GroupInfo using the key and nonce derived from the
-         joiner_secret for the new epoch (see Section 11.2.2)
+         joiner_secret for the new epoch (see Section 11.2.1.2)
 
    *  For each new member in the group:
 
@@ -3286,7 +3284,45 @@ sender_data_nonce = ExpandWithLabel(sender_data_secret, "nonce", ciphertext_samp
    MLSPlaintext.confirmation_tag =
        MAC(confirmation_key, GroupContext.confirmed_transcript_hash)
 
-11.2.1.  External Commits
+11.2.1.  Adding Members to the Group
+
+   New members can join the group in two ways.  Either by being added by
+   a group member, or by adding themselves through an external Commit.
+   In both cases, the new members need information to bootstrap their
+   local group state.
+
+   struct {
+       ProtocolVersion version = mls10;
+       CipherSuite cipher_suite;
+       opaque group_id<0..255>;
+       uint64 epoch;
+       opaque tree_hash<0..255>;
+       opaque confirmed_transcript_hash<0..255>;
+       Extension group_context_extensions<0..2^32-1>;
+       Extension other_extensions<0..2^32-1>;
+       MAC confirmation_tag;
+       KeyPackageRef signer;
+       opaque signature<0..2^16-1>;
+   } GroupInfo;
+
+   New members MUST verify the signature using the public key taken from
+   the credential in the leaf node of the member with KeyPackageRef
+   signer.  The signature covers the following structure, comprising all
+   the fields in the GroupInfo above signature:
+
+   struct {
+       CipherSuite cipher_suite;
+       opaque group_id<0..255>;
+       uint64 epoch;
+       opaque tree_hash<0..255>;
+       opaque confirmed_transcript_hash<0..255>;
+       Extension group_context_extensions<0..2^32-1>;
+       Extension other_extensions<0..2^32-1>;
+       MAC confirmation_tag;
+       KeyPackageRef signer;
+   } GroupInfoTBS;
+
+11.2.1.1.  Joining via External Commits
 
    External Commits are a mechanism for new members (external parties
    that want to become members of the group) to add themselves to a
@@ -3308,61 +3344,43 @@ sender_data_nonce = ExpandWithLabel(sender_data_secret, "nonce", ciphertext_samp
 
    *  public tree hash
 
-   *  interim transcript hash
+   *  confirmed transcript hash
+
+   *  confirmation tag of the most recent Commit
 
    *  group extensions
 
    *  external public key
 
-   This information is aggregated in a PublicGroupState object as
-   follows:
+   In other words, to join a group via an External Commit, a new member
+   needs a GroupInfo with an ExternalPub extension present in the
+   other_extensions.
 
    struct {
-       ProtocolVersion version = mls10;
-       CipherSuite cipher_suite;
-       opaque group_id<0..255>;
-       uint64 epoch;
-       opaque tree_hash<0..255>;
-       opaque interim_transcript_hash<0..255>;
-       Extension group_context_extensions<0..2^32-1>;
-       Extension other_extensions<0..2^32-1>;
        HPKEPublicKey external_pub;
-       KeyPackageRef signer;
-       opaque signature<0..2^16-1>;
-   } PublicGroupState;
+   } ExternalPub;
+
+   Thus, a member of the group can enable new clients to join by making
+   a GroupInfo object available to them.  Note that because a GroupInfo
+   object is specific to an epoch, it will need to be updated as the
+   group advances.  In particular, each GroupInfo object can be used for
+   one external join, since that external join will cause the epoch to
+   change.
 
    Note that the tree_hash field is used the same way as in the Welcome
    message.  The full tree can be included via the ratchet_tree
    extension Section 11.3.
 
-   The signature MUST verify using the public key taken from the
-   credential in the leaf node of the member with KeyPackageRef signer.
-   The signature covers the following structure, comprising all the
-   fields in the PublicGroupState above signature:
+   The signature on the GroupInfo struct authenticates the HPKE public
+   key, so that the joiner knows that the public key was provided by a
+   member of the group.  The fields that are not signed are included in
+   the key schedule via the GroupContext object.  If the joiner is
+   provided an inaccurate data for these fields, then its external
+   Commit will have an incorrect confirmation_tag and thus be rejected.
 
-   struct {
-       ProtocolVersion version = mls10;
-       CipherSuite cipher_suite;
-       opaque group_id<0..255>;
-       uint64 epoch;
-       opaque tree_hash<0..255>;
-       opaque interim_transcript_hash<0..255>;
-       Extension group_context_extensions<0..2^32-1>;
-       Extension other_extensions<0..2^32-1>;
-       HPKEPublicKey external_pub;
-       KeyPackageRef signer;
-   } PublicGroupStateTBS;
-
-   This signature authenticates the HPKE public key, so that the joiner
-   knows that the public key was provided by a member of the group.  The
-   fields that are not signed are included in the key schedule via the
-   GroupContext object.  If the joiner is provided an inaccurate data
-   for these fields, then its external Commit will have an incorrect
-   confirmation_tag and thus be rejected.
-
-   The information in a PublicGroupState is not deemed public in
-   general, but applications can choose to make it available to new
-   members in order to allow External Commits.
+   The information in a GroupInfo is not deemed public in general, but
+   applications can choose to make it available to new members in order
+   to allow External Commits.
 
    External Commits work like regular Commits, with a few differences:
 
@@ -3416,7 +3434,7 @@ sender_data_nonce = ExpandWithLabel(sender_data_secret, "nonce", ciphertext_samp
    application will need to ensure that continuing, non-resync'ing
    members have the required PSK.
 
-11.2.2.  Welcoming New Members
+11.2.1.2.  Joining via Welcome Message
 
    The sender of a Commit message is responsible for sending a Welcome
    message to any new members added via Add proposals.  The Welcome
@@ -3441,18 +3459,6 @@ sender_data_nonce = ExpandWithLabel(sender_data_secret, "nonce", ciphertext_samp
    populate the psks field indicating which PSK to use.
 
    struct {
-     opaque group_id<0..255>;
-     uint64 epoch;
-     opaque tree_hash<0..255>;
-     opaque confirmed_transcript_hash<0..255>;
-     Extension group_context_extensions<0..2^32-1>;
-     Extension other_extensions<0..2^32-1>;
-     MAC confirmation_tag;
-     KeyPackageRef signer;
-     opaque signature<0..2^16-1>;
-   } GroupInfo;
-
-   struct {
      opaque path_secret<1..255>;
    } PathSecret;
 
@@ -3468,7 +3474,6 @@ sender_data_nonce = ExpandWithLabel(sender_data_secret, "nonce", ciphertext_samp
    } EncryptedGroupSecrets;
 
    struct {
-     ProtocolVersion version = mls10;
      CipherSuite cipher_suite;
      EncryptedGroupSecrets secrets<0..2^32-1>;
      opaque encrypted_group_info<1..2^32-1>;
@@ -3696,9 +3701,9 @@ sender_data_nonce = ExpandWithLabel(sender_data_secret, "nonce", ciphertext_samp
    *  In KeyPackages, to describe client capabilities and aspects of
       their participation in the group (once in the ratchet tree)
 
-   *  In the Welcome message, to tell new members of a group what
-      parameters are being used by the group, and to provide any
-      additional details required to join the group
+   *  In the GroupInfo, to tell new members of a group what parameters
+      are being used by the group, and to provide any additional details
+      required to join the group
 
    *  In the GroupContext object, to ensure that all members of the
       group have the same view of the parameters in use
@@ -3708,9 +3713,9 @@ sender_data_nonce = ExpandWithLabel(sender_data_secret, "nonce", ciphertext_samp
    Clients indicate their support for parameters in KeyPackage
    extensions.  New members of a group are informed of the group's
    GroupContext extensions via the group_context_extensions field in the
-   GroupInfo or PublicGroupState object.  The other_extensions field in
-   a GroupInfo object can be used to provide additional parameters to
-   new joiners that are used to join the group.
+   GroupInfo object.  The other_extensions field in a GroupInfo object
+   can be used to provide additional parameters to new joiners that are
+   used to join the group.
 
    This extension mechanism is designed to allow for secure and forward-
    compatible negotiation of extensions.  For this to work,
@@ -4245,6 +4250,8 @@ sender_data_nonce = ExpandWithLabel(sender_data_secret, "nonce", ciphertext_samp
    |0x0005| ratchet_tree          | GI         | Y           |RFC XXXX |
    +------+-----------------------+------------+-------------+---------+
    |0x0006| required_capabilities | GC         | Y           |RFC XXXX |
+   +------+-----------------------+------------+-------------+---------+
+   |0x0007| external_pub          | GI         | Y           |RFC XXXX |
    +------+-----------------------+------------+-------------+---------+
    |0xff00| Reserved for Private  | N/A        | N/A         |RFC XXXX |
    |-     | Use                   |            |             |         |
